@@ -34,6 +34,171 @@ EndScriptData */
 #include "precompiled.h"
 #include "baradin_hold.h"
 
-// Placeholder
+struct is_baradin_hold : public InstanceScript
+{
+    is_baradin_hold() : InstanceScript("instance_baradin_hold") {}
 
-#endif
+    class instance_baradin_hold : public ScriptedInstance, private DialogueHelper
+    {
+    public:
+        ~instance_baradin_hold() {}
+
+        void Initialize() override
+        {
+            memset(&m_auiEncounter, 0, sizeof(m_auiEncounter)); // Fyre, Where do we delare m_auiEncounter?
+            InitializeDialogueHelper(this);
+        }
+
+        bool IsEncounterInProgress() const override
+        {
+            for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
+            {
+                if (m_auiEncounter[i] == IN_PROGRESS)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        void OnPlayerEnter(Player* pPlayer) override
+        {
+
+        }
+
+        void OnObjectCreate(GameObject* pGo) override
+        {
+            // Fyre, BELOW IS AN EXAMPLE TAKEN FROM instance_sunwell_plateau.cpp
+
+            // switch (pGo->GetEntry())
+            // {
+            // case GO_ICE_BARRIER:
+            //     break;
+
+            // default:
+            //     return;
+            // }
+            // m_mGoEntryGuidStore[pGo->GetEntry()] = pGo->GetObjectGuid();
+        }
+
+        void OnCreatureCreate(Creature* pCreature) override
+        {
+            switch (pCreature->GetEntry())
+            {
+            case NPC_ARGALOTH:
+            case NPC_OCCUTHAR:
+            case NPC_ALIZABAL:
+                m_mNpcEntryGuidStore[pCreature->GetEntry()] = pCreature->GetObjectGuid();
+                break;
+            }
+        }
+
+        void OnCreatureDeath(Creature* pCreature) override
+        {
+            
+        }
+
+        void OnCreatureEvade(Creature* pCreature)
+        {
+            
+        }
+
+        void SetData(uint32 uiType, uint32 uiData) override
+        {
+            
+        }
+
+        uint32 GetData(uint32 uiType) const override
+        {
+            if (uiType < MAX_ENCOUNTER)
+            {
+                return m_auiEncounter[uiType];
+            }
+
+            return 0;
+        }
+
+        void SetData64(uint32 type, uint64 data) override
+        {
+            
+        }
+
+        uint64 GetData64(uint32 type) const override
+        {
+            
+        }
+
+        void Update(uint32 uiDiff) override
+        {
+            DialogueUpdate(uiDiff);
+
+        }
+
+        const char* Save() const override { return m_strInstData.c_str(); }
+        void Load(const char* in) override
+        {
+            if (!in)
+            {
+                OUT_LOAD_INST_DATA_FAIL;
+                return;
+            }
+
+            OUT_LOAD_INST_DATA(in);
+
+            std::istringstream loadStream(in);
+            loadStream >> m_auiEncounter[0] >> m_auiEncounter[1] >> m_auiEncounter[2] >>
+                m_auiEncounter[3] >> m_auiEncounter[4] >> m_auiEncounter[5];
+
+            for (uint8 i = 0; i < MAX_ENCOUNTER; ++i)
+            {
+                if (m_auiEncounter[i] == IN_PROGRESS)
+                {
+                    m_auiEncounter[i] = NOT_STARTED;
+                }
+            }
+
+            OUT_LOAD_INST_DATA_COMPLETE;
+        }
+
+        void JustDidDialogueStep(int32 iEntry) override
+        {
+
+        }
+    };
+
+    InstanceData* GetInstanceData(Map* pMap) override
+    {
+        return new instance_baradin_hold(pMap);
+    }
+};
+
+struct at_baradin_hold : public AreaTriggerScript
+{
+    at_baradin_hold() : AreaTriggerScript("at_baradin_hold") {}
+
+    bool OnTrigger(Player* pPlayer, AreaTriggerEntry const* pAt) override
+    {
+        return false;
+    }
+};
+
+void AddSC_instance_baradin_hold()
+{
+    Script* s;
+
+    s = new is_baradin_hold();
+    s->RegisterSelf();
+    s = new at_baradin_hold();
+    s->RegisterSelf();
+
+    //pNewScript = new Script;
+    //pNewScript->Name = "instance_baradin_hold";
+    //pNewScript->GetInstanceData = &GetInstanceData_instance_baradin_hold;
+    //pNewScript->RegisterSelf();
+
+    //pNewScript = new Script;
+    //pNewScript->Name = "at_baradin_hold";
+    //pNewScript->pAreaTrigger = &AreaTrigger_at_baradin_hold;
+    //pNewScript->RegisterSelf();
+}

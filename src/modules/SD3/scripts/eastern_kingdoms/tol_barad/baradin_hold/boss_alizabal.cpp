@@ -34,6 +34,78 @@ EndScriptData */
 #include "precompiled.h"
 #include "baradin_hold.h"
 
-// Placeholder
+// The door to the room is: Doodad_TolBarad_Door_01. GUID = 207849, ID = 209849
+static const DialogueEntry aIntroDialogue[] =
+{
+    {SAY_ALIZABAL_INTRO, NPC_ALIZABAL, 1000},
+    {0, 0, 0},
+};
 
-#endif
+struct boss_alizabal : public CreatureScript
+{
+    boss_alizabal() : CreatureScript("boss_alizabal") {}
+
+    struct boss_alizabalAI : public ScriptedAI
+    {
+        boss_alizabalAI(Creature* pCreature) : ScriptedAI(pCreature),
+        m_introDialogue(aIntroDialogue)
+        {
+            m_pInstance = (ScriptedInstance*)pCreature->GetInstanceData();
+            m_introDialogue.InitializeDialogueHelper(m_pInstance);
+        }
+
+        ScriptedInstance* m_pInstance;
+        DialogueHelper m_introDialogue;
+
+        bool m_bDidIntro;
+
+        void Reset() override
+        {
+            m_bDidIntro = false;
+        }
+
+        void KilledUnit(Unit* /*pVictim*/) override
+        {
+            switch(urand(0,4)) {
+            case 1:
+                DoScriptText(SAY_ALIZABAL_KILL_PLAYER_1, m_creature);
+                break;
+            case 2:
+                DoScriptText(SAY_ALIZABAL_KILL_PLAYER_2, m_creature);
+                break;
+            case 3:
+                DoScriptText(SAY_ALIZABAL_KILL_PLAYER_3, m_creature);
+                break;
+            case 4:
+                DoScriptText(SAY_ALIZABAL_KILL_PLAYER_4, m_creature);
+                break;
+            }
+        }
+
+        void JustDied(Unit* /*pKiller*/) override
+        {
+            if (m_pInstance)
+            {
+                if (Creature* pAlizabal = m_pInstance->GetSingleCreatureFromStorage(NPC_ALIZABAL))
+                {
+                    if (!pAlizabal->IsAlive())
+                    {
+                        m_pInstance->SetData(TYPE_ALIZABAL, DONE);
+                        DoScriptText(SAY_ALIZABAL_DEATH, m_creature);
+                    }
+                    else
+                    {
+                        // Remove loot flag
+                        m_creature->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE); // ?? Do we need this? Left over from boss_eredar_twins.cpp example.
+                    }
+                }
+            }
+        }
+
+    };
+
+    CreatureAI* GetAI(Creature* pCreature) override
+    {
+        return new boss_alizabalAI(pCreature);
+    }
+};

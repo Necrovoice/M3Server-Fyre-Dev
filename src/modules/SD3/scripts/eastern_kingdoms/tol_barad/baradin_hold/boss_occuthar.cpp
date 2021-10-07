@@ -35,5 +35,3 @@ EndScriptData */
 #include "baradin_hold.h"
 
 // Placeholder
-
-#endif

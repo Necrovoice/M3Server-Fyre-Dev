@@ -31,23 +31,36 @@ enum
 {
     MAX_ENCOUNTER           = 3,                            // ? [Fyre] There are 3 bosses... max_encounter = 3?
 
+    TYPE_ARGALOTH           = 0,
+    TYPE_OCCUTHAR           = 1,
+    TYPE_ALIZABAL           = 2,
+
     // Alizabal Text (Source: https://wowpedia.fandom.com/wiki/Alizabal)
     //// These were not in script_texts yet. Need to add them and then use the `entry` value for each.
-    SAY_INTRO               = "How I HATE this place. My captors may be long-dead, but don't think I won't take it all out on you miserable treasure-hunters.",
-    SAY_AGGRO               = "I hate adventurers.",
-    SAY_BLADE_DANCE_1       = "I hote standing still!",
-    SAY_BLADE_DANCE_2       = "I hate you all!",
-    SAY_SEETHING_HATE_1     = "Feel my hatred!",
-    SAY_SEETHING_HATE_2     = "My hatred burns!",
-    SAY_SEETHING_HATE_3     = "My hate will consume you!",
-    SAY_SKEWER_1            = "I hate armor.",
-    SAY_SKEWER_2            = "I hate martyrs.",
-    SAY_KILL_PLAYER_1       = "I still hate you.",
-    SAY_KILL_PLAYER_2       = "Do you hate me? Good.",
-    SAY_KILL_PLAYER_3       = "I hate mercy.",
-    SAY_KILL_PLAYER_4       = "I didn't hate that.",
-    SAY_WIPE                = "I hate incompetent raiders.",
-    SAY_DEATH               = "I hate... every one of you...",
+    // SAY_ALIZABAL_INTRO               = "How I HATE this place. My captors may be long-dead, but don't think I won't take it all out on you miserable treasure-hunters.",
+    // SAY_ALIZABAL_AGGRO               = "I hate adventurers.",
+    // SAY_ALIZABAL_BLADE_DANCE_1       = "I hate standing still!",
+    // SAY_ALIZABAL_BLADE_DANCE_2       = "I hate you all!",
+    // SAY_ALIZABAL_SEETHING_HATE_1     = "Feel my hatred!",
+    // SAY_ALIZABAL_SEETHING_HATE_2     = "My hatred burns!",
+    // SAY_ALIZABAL_SEETHING_HATE_3     = "My hate will consume you!",
+    // SAY_ALIZABAL_SKEWER_1            = "I hate armor.",
+    // SAY_ALIZABAL_SKEWER_2            = "I hate martyrs.",
+    // SAY_ALIZABAL_KILL_PLAYER_1       = "I still hate you.",
+    // SAY_ALIZABAL_KILL_PLAYER_2       = "Do you hate me? Good.",
+    // SAY_ALIZABAL_KILL_PLAYER_3       = "I hate mercy.",
+    // SAY_ALIZABAL_KILL_PLAYER_4       = "I didn't hate that.",
+    // SAY_ALIZABAL_WIPE                = "I hate incompetent raiders.",
+    // SAY_ALIZABAL_DEATH               = "I hate... every one of you...",
+
+
+    // THESE ARE FAKE NUMBERS TO JUST HElP ME LEARN!
+    SAY_ALIZABAL_INTRO               = -1580044,
+    SAY_ALIZABAL_KILL_PLAYER_1       = -1580043,
+    SAY_ALIZABAL_KILL_PLAYER_2       = -1580064,
+    SAY_ALIZABAL_KILL_PLAYER_3       = -1580065,
+    SAY_ALIZABAL_KILL_PLAYER_4       = -1580066,
+    SAY_ALIZABAL_DEATH               = -1580067,
 
     // NPCs
     NPC_ARGALOTH            = 47120,
