@@ -64,19 +64,34 @@ struct boss_alizabal : public CreatureScript
             m_bDidIntro = false;
         }
 
-        void KilledUnit(Unit* /*pVictim*/) override
+        void Aggro(Unit* /*pWho*/) override
         {
+            DoScriptText(SAY_ALIZABAL_INTRO, m_creature);
+
+            if (m_pInstance)
+            {
+                m_pInstance->SetData(TYPE_ALIZABAL, IN_PROGRESS);
+            }
+        }
+
+        void KilledUnit(Unit* pVictim) override
+        {
+            if (pVictim->GetTypeId() != TYPEID_PLAYER)
+            {
+                return;
+            }
+
             switch(urand(0,4)) {
-            case 1:
+            case 0:
                 DoScriptText(SAY_ALIZABAL_KILL_PLAYER_1, m_creature);
                 break;
-            case 2:
+            case 1:
                 DoScriptText(SAY_ALIZABAL_KILL_PLAYER_2, m_creature);
                 break;
-            case 3:
+            case 2:
                 DoScriptText(SAY_ALIZABAL_KILL_PLAYER_3, m_creature);
                 break;
-            case 4:
+            case 3:
                 DoScriptText(SAY_ALIZABAL_KILL_PLAYER_4, m_creature);
                 break;
             }
@@ -86,21 +101,29 @@ struct boss_alizabal : public CreatureScript
         {
             if (m_pInstance)
             {
-                if (Creature* pAlizabal = m_pInstance->GetSingleCreatureFromStorage(NPC_ALIZABAL))
-                {
-                    if (!pAlizabal->IsAlive())
-                    {
-                        m_pInstance->SetData(TYPE_ALIZABAL, DONE);
-                        DoScriptText(SAY_ALIZABAL_DEATH, m_creature);
-                    }
-                    else
-                    {
-                        // Remove loot flag
-                        m_creature->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE); // ?? Do we need this? Left over from boss_eredar_twins.cpp example.
-                    }
-                }
+                m_pInstance->SetData(TYPE_ALIZABAL, DONE);
+                DoScriptText(SAY_ALIZABAL_DEATH, m_creature);
             }
         }
+        // void JustDied(Unit* /*pKiller*/) override
+        // {
+        //     if (m_pInstance)
+        //     {
+        //         if (Creature* pAlizabal = m_pInstance->GetSingleCreatureFromStorage(NPC_ALIZABAL))
+        //         {
+        //             if (!pAlizabal->IsAlive())
+        //             {
+        //                 m_pInstance->SetData(TYPE_ALIZABAL, DONE);
+        //                 DoScriptText(SAY_ALIZABAL_DEATH, m_creature);
+        //             }
+        //             // else
+        //             // {
+        //             //     // Remove loot flag
+        //             //     m_creature->RemoveFlag(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_LOOTABLE); // ?? Do we need this? Left over from boss_eredar_twins.cpp example.
+        //             // }
+        //         }
+        //     }
+        // }
 
     };
 

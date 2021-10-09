@@ -38,15 +38,24 @@ struct is_baradin_hold : public InstanceScript
 {
     is_baradin_hold() : InstanceScript("instance_baradin_hold") {}
 
-    class instance_baradin_hold : public ScriptedInstance, private DialogueHelper
+    // class instance_baradin_hold : public ScriptedInstance, private DialogueHelper
+    class instance_baradin_hold : public ScriptedInstance
     {
     public:
+        instance_baradin_hold(Map* pMap) : ScriptedInstance(pMap)
+        {
+            Initialize();
+        }
+
         ~instance_baradin_hold() {}
+        
+        uint32 m_auiEncounter[MAX_ENCOUNTER];
+        std::string m_strInstData;
 
         void Initialize() override
         {
             memset(&m_auiEncounter, 0, sizeof(m_auiEncounter)); // Fyre, Where do we delare m_auiEncounter?
-            InitializeDialogueHelper(this);
+            // InitializeDialogueHelper(this);
         }
 
         bool IsEncounterInProgress() const override
@@ -106,7 +115,19 @@ struct is_baradin_hold : public InstanceScript
 
         void SetData(uint32 uiType, uint32 uiData) override
         {
-            
+            // if (uiData == DONE)
+            // {
+            //     OUT_SAVE_INST_DATA;
+
+            //     std::ostringstream saveStream;
+            //     saveStream << m_auiEncounter[0] << " " << m_auiEncounter[1] << " " << m_auiEncounter[2] << " "
+            //         << m_auiEncounter[3] << " " << m_auiEncounter[4] << " " << m_auiEncounter[5];
+
+            //     m_strInstData = saveStream.str();
+
+            //     SaveToDB();
+            //     OUT_SAVE_INST_DATA_COMPLETE;
+            // }
         }
 
         uint32 GetData(uint32 uiType) const override
@@ -131,7 +152,7 @@ struct is_baradin_hold : public InstanceScript
 
         void Update(uint32 uiDiff) override
         {
-            DialogueUpdate(uiDiff);
+            // DialogueUpdate(uiDiff);
 
         }
 
@@ -159,11 +180,6 @@ struct is_baradin_hold : public InstanceScript
             }
 
             OUT_LOAD_INST_DATA_COMPLETE;
-        }
-
-        void JustDidDialogueStep(int32 iEntry) override
-        {
-
         }
     };
 

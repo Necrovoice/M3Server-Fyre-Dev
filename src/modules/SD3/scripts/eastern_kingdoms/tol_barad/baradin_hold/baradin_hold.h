@@ -29,7 +29,7 @@
 
 enum 
 {
-    MAX_ENCOUNTER           = 3,                            // ? [Fyre] There are 3 bosses... max_encounter = 3?
+    MAX_ENCOUNTER           = 3,
 
     TYPE_ARGALOTH           = 0,
     TYPE_OCCUTHAR           = 1,
