@@ -36,7 +36,8 @@ EndScriptData */
 
 enum 
 {
-    // THESE ARE FAKE NUMBERS TO JUST HElP ME LEARN!
+    // THESE VALUES ARE NOT CORRECT - THE CORRECT TEXT STILL NEEDS TO BE ADDED TO THE DATABASE. 
+    // USING THESE VALUES AS PLACEHOLDERS. BUT THEY DO POINT TO ACTUAL TEXT.
     SAY_ALIZABAL_INTRO               = -1580044,
     SAY_ALIZABAL_KILL_PLAYER_1       = -1580043,
     SAY_ALIZABAL_KILL_PLAYER_2       = -1580064,
@@ -50,11 +51,6 @@ enum
 };
 
 // The door to the room is: Doodad_TolBarad_Door_01. GUID = 207849, ID = 209849
-// static const DialogueEntry aIntroDialogue[] =
-// {
-//     {SAY_ALIZABAL_INTRO, NPC_ALIZABAL, 1000},
-//     {0, 0, 0},
-// };
 
 struct boss_alizabal : public CreatureScript
 {
