@@ -72,10 +72,10 @@ struct boss_alizabal : public CreatureScript
                 return;
             }
 
-            if (urand(0, 4))
-            {
-                return;
-            }
+            // if (urand(0, 4))
+            // {
+            //     return;
+            // }
 
             switch (urand(0, 3))
             {

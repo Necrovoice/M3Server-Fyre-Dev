@@ -234,6 +234,7 @@ void AddSC_gilneas();
 void AddSC_gilneas_city();
 void AddSC_twilight_highlands();
 void AddSC_vashjir();
+void AddSC_boss_alizabal();
 #endif
 
 void AddEasternKingdomsScripts()
@@ -443,6 +444,8 @@ void AddEasternKingdomsScripts()
     AddSC_gilneas();
     AddSC_gilneas_city();
 #endif
+
+    AddSC_boss_alizabal();
 
 }
 
