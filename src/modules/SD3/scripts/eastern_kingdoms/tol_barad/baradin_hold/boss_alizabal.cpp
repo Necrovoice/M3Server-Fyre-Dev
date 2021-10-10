@@ -72,11 +72,6 @@ struct boss_alizabal : public CreatureScript
                 return;
             }
 
-            // if (urand(0, 4))
-            // {
-            //     return;
-            // }
-
             switch (urand(0, 3))
             {
             case 0: DoScriptText(SAY_ALIZABAL_KILL_PLAYER_1, m_creature); break;
