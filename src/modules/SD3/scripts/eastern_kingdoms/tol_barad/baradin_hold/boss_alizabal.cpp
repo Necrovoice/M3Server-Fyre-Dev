@@ -130,9 +130,9 @@ struct boss_alizabal : public CreatureScript
                 switch (urand(0, 1))
                 {
                 case 0:  // Seething Hate is cast onto random target.
-                    if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 1, SPELL_SEETHING_HATE, SELECT_FLAG_PLAYER))
+                    if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0, SPELL_SEETHING_HATE, SELECT_FLAG_PLAYER))
                     {
-                        if (DoCastSpellIfCan(m_creature, SPELL_SEETHING_HATE) == CAST_OK)
+                        if (DoCastSpellIfCan(pTarget, SPELL_SEETHING_HATE) == CAST_OK)
                         {
                             m_uiSharedTimerFirst = 8 * IN_MILLISECONDS;
                             switch (urand(0,2))
@@ -143,17 +143,16 @@ struct boss_alizabal : public CreatureScript
                             }
                         }
                     }
+                    }
+
                     break;
 
                 case 1:   // Skewer is cast onto current target.
                     if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_SKEWER) == CAST_OK)
                     {
                         m_uiSharedTimerFirst = 8 * IN_MILLISECONDS;
-                        switch (urand(0,1))
-                        {
-                            case 0: DoScriptText(YELL_ALIZABAL_SKEWER_1, m_creature); break;
-                            case 1: DoScriptText(YELL_ALIZABAL_SKEWER_2, m_creature); break;
-                        }
+                        
+                        DoScriptText(urand(0, 1) ? YELL_ALIZABAL_SKEWER_1 : YELL_ALIZABAL_SKEWER_2, m_creature);
                     }
                     break;
                 }
@@ -169,11 +168,8 @@ struct boss_alizabal : public CreatureScript
                 if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE) == CAST_OK)
                 {
                     m_uiBladeDanceTimer = 1 * MINUTE * IN_MILLISECONDS;
-                    switch (urand(0,1))
-                    {
-                        case 0: DoScriptText(YELL_ALIZABAL_BLADE_DANCE_1, m_creature); break;
-                        case 1: DoScriptText(YELL_ALIZABAL_BLADE_DANCE_2, m_creature); break;
-                    }
+
+                    DoScriptText(urand(0, 1) ? YELL_ALIZABAL_BLADE_DANCE_1 : YELL_ALIZABAL_BLADE_DANCE_2, m_creature);
                 }
             }
             else
