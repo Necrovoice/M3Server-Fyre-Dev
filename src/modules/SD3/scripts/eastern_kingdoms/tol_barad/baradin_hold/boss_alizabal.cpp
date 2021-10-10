@@ -34,23 +34,43 @@ EndScriptData */
 #include "precompiled.h"
 // #include "baradin_hold.h"
 
-enum 
+enum Creatures
 {
-    // THESE VALUES ARE NOT CORRECT - THE CORRECT TEXT STILL NEEDS TO BE ADDED TO THE DATABASE. 
-    // USING THESE VALUES AS PLACEHOLDERS. BUT THEY DO POINT TO ACTUAL TEXT.
-    SAY_ALIZABAL_INTRO               = -1580044,
-    SAY_ALIZABAL_KILL_PLAYER_1       = -1580043,
-    SAY_ALIZABAL_KILL_PLAYER_2       = -1580064,
-    SAY_ALIZABAL_KILL_PLAYER_3       = -1580065,
-    SAY_ALIZABAL_KILL_PLAYER_4       = -1580066,
-    SAY_ALIZABAL_DEATH               = -1580067,
-
-    // NPCs
-    NPC_ALIZABAL            = 55869
-
+    NPC_ALIZABAL                      = 55869
 };
 
-// The door to the room is: Doodad_TolBarad_Door_01. GUID = 207849, ID = 209849
+enum Yells
+{
+    YELL_ALIZABAL_INTRO               = -1999927,
+    YELL_ALIZABAL_AGGRO               = -1999928,
+    YELL_ALIZABAL_BLADE_DANCE_1       = -1999929,
+    YELL_ALIZABAL_BLADE_DANCE_2       = -1999930,
+    YELL_ALIZABAL_SEETHING_HATE_1     = -1999931,
+    YELL_ALIZABAL_SEETHING_HATE_2     = -1999932,
+    YELL_ALIZABAL_SEETHING_HATE_3     = -1999933,
+    YELL_ALIZABAL_SKEWER_1            = -1999934,
+    YELL_ALIZABAL_SKEWER_2            = -1999935,
+    YELL_ALIZABAL_KILL_PLAYER_1       = -1999936,
+    YELL_ALIZABAL_KILL_PLAYER_2       = -1999937,
+    YELL_ALIZABAL_KILL_PLAYER_3       = -1999938,
+    YELL_ALIZABAL_KILL_PLAYER_4       = -1999939,
+    YELL_ALIZABAL_WIPE                = -1999940,
+    YELL_ALIZABAL_DEATH               = -1999941
+};
+
+enum Spells
+{
+    SPELL_SKEWER                      = 104936,
+    SPELL_SEETHING_HATE               = 105067,
+    SPELL_BLADE_DANCE                 = 104994,
+    SPELL_BERSERK                     = 47008
+};
+
+enum GameObjects
+{
+    GAMEOBJECT_TOLBARAD_DOOR_01       = 207849      // The door to the room is: Doodad_TolBarad_Door_01. GUID = 207849, ID = 209849
+};
+
 
 struct boss_alizabal : public CreatureScript
 {
@@ -60,9 +80,42 @@ struct boss_alizabal : public CreatureScript
     {
         boss_alizabalAI(Creature* pCreature) : ScriptedAI(pCreature) { }
 
+        // Timers
+        uint32 m_uiEnrageTimer;
+
+        void Reset() override
+        {
+            DoScriptText(YELL_ALIZABAL_WIPE, m_creature);
+
+            m_uiEnrageTimer = 5 * MINUTE * IN_MILLISECONDS;
+        }
+
         void Aggro(Unit* /*pWho*/) override
         {
-            DoScriptText(SAY_ALIZABAL_INTRO, m_creature);
+            DoScriptText(YELL_ALIZABAL_AGGRO, m_creature);
+        }
+
+        void UpdateAI(const uint32 uiDiff) override
+        {
+            if (!m_creature->SelectHostileTarget() || !m_creature->getVictim())
+            {
+                return;
+            }
+
+            // Berserk Timer
+            if (m_uiEnrageTimer < uiDiff)
+            {
+                if (DoCastSpellIfCan(m_creature, SPELL_BERSERK) == CAST_OK)
+                {
+                    m_uiEnrageTimer = 5 * MINUTE * IN_MILLISECONDS;
+                }
+            }
+            else
+            {
+                m_uiEnrageTimer -= uiDiff;
+            }
+            
+            DoMeleeAttackIfReady();
         }
 
         void KilledUnit(Unit* pVictim) override
@@ -74,16 +127,16 @@ struct boss_alizabal : public CreatureScript
 
             switch (urand(0, 3))
             {
-            case 0: DoScriptText(SAY_ALIZABAL_KILL_PLAYER_1, m_creature); break;
-            case 1: DoScriptText(SAY_ALIZABAL_KILL_PLAYER_2, m_creature); break;
-            case 2: DoScriptText(SAY_ALIZABAL_KILL_PLAYER_3, m_creature); break;
-            case 3: DoScriptText(SAY_ALIZABAL_KILL_PLAYER_4, m_creature); break;
+            case 0: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_1, m_creature); break;
+            case 1: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_2, m_creature); break;
+            case 2: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_3, m_creature); break;
+            case 3: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_4, m_creature); break;
             }
         }
 
         void JustDied(Unit* /*pKiller*/) override
         {
-            DoScriptText(SAY_ALIZABAL_DEATH, m_creature);
+            DoScriptText(YELL_ALIZABAL_DEATH, m_creature);
         }
     };
 
@@ -105,3 +158,25 @@ void AddSC_boss_alizabal()
     //pNewScript->GetAI = &GetAI_boss_alizabal;
     //pNewScript->RegisterSelf();
 }
+
+
+
+// Database Scripts to Support This Script.
+// INSERT INTO `script_binding` (`type`,`ScriptName`,`bind`,`data`) VALUES (0, 'boss_alizabal', 55869, 0);
+// DELETE FROM `script_texts` WHERE `entry` IN (-1999927,-1999928,-1999929,-1999930,-1999931,-1999932,-1999933,9-1999934,-1999935,-1999936,-1999937,-1999938,-1999939,-1999940,-1999941);
+// INSERT INTO `script_texts` (`entry`,`content_default`,`type`,`comment`) VALUES 
+// (-1999927,'How I HATE this place. My captors may be long-dead, but don\'t think I wo>
+// (-1999928,'I hate adventurers.',1,''),
+// (-1999929,'I hate standing still!',1,''),
+// (-1999930,'I hate you all!',1,''),
+// (-1999931,'Feel my hatred!',1,''),
+// (-1999932,'My hatred burns!',1,''),
+// (-1999933,'My hate will consume you!',1,''),
+// (-1999934,'I hate armor.',1,''),
+// (-1999935,'I hate martyrs.',1,''),
+// (-1999936,'I still hate you.',1,''),
+// (-1999937,'Do you hate me? Good.',1,''),
+// (-1999938,'I hate mercy.',1,''),
+// (-1999939,'I didn\'t hate that.',1,''),
+// (-1999940,'I hate incompetent raiders.',1,''),
+// (-1999941,'I hate... every one of you...',1,'');
