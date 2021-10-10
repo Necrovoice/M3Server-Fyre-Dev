@@ -71,7 +71,6 @@ enum GameObjects
     GAMEOBJECT_TOLBARAD_DOOR_01       = 207849      // The door to the room is: Doodad_TolBarad_Door_01. GUID = 207849, ID = 209849
 };
 
-
 struct boss_alizabal : public CreatureScript
 {
     boss_alizabal() : CreatureScript("boss_alizabal") {}
@@ -82,12 +81,14 @@ struct boss_alizabal : public CreatureScript
 
         // Timers
         uint32 m_uiEnrageTimer;
+        uint32 m_uiBladeDanceTimer;
 
         void Reset() override
         {
             DoScriptText(YELL_ALIZABAL_WIPE, m_creature);
 
             m_uiEnrageTimer = 5 * MINUTE * IN_MILLISECONDS;
+            m_uiBladeDanceTimer = 25 * IN_MILLISECONDS;
         }
 
         void Aggro(Unit* /*pWho*/) override
@@ -102,6 +103,24 @@ struct boss_alizabal : public CreatureScript
                 return;
             }
 
+            // Blade Dance Timer
+            if (m_uiBladeDanceTimer < uiDiff)
+            {
+                if (DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE) == CAST_OK)
+                {
+                    m_uiBladeDanceTimer = 1 * MINUTE * IN_MILLISECONDS;
+                    switch (urand(0,1))
+                    {
+                        case 0: DoScriptText(YELL_ALIZABAL_BLADE_DANCE_1, m_creature); break;
+                        case 1: DoScriptText(YELL_ALIZABAL_BLADE_DANCE_2, m_creature); break;
+                    }
+                }
+            }
+            else
+            {
+                m_uiBladeDanceTimer -= uiDiff;
+            }
+
             // Berserk Timer
             if (m_uiEnrageTimer < uiDiff)
             {
@@ -114,7 +133,7 @@ struct boss_alizabal : public CreatureScript
             {
                 m_uiEnrageTimer -= uiDiff;
             }
-            
+
             DoMeleeAttackIfReady();
         }
 
@@ -127,10 +146,10 @@ struct boss_alizabal : public CreatureScript
 
             switch (urand(0, 3))
             {
-            case 0: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_1, m_creature); break;
-            case 1: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_2, m_creature); break;
-            case 2: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_3, m_creature); break;
-            case 3: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_4, m_creature); break;
+                case 0: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_1, m_creature); break;
+                case 1: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_2, m_creature); break;
+                case 2: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_3, m_creature); break;
+                case 3: DoScriptText(YELL_ALIZABAL_KILL_PLAYER_4, m_creature); break;
             }
         }
 
