@@ -71,6 +71,23 @@ enum GameObjects
     GAMEOBJECT_TOLBARAD_DOOR_01       = 207849      // The door to the room is: Doodad_TolBarad_Door_01. GUID = 207849, ID = 209849
 };
 
+
+// First and foremost,  Skewer and  Seething Hate are on a shared mechanic.  [>> DONE <<]
+// They are both exactly a 20 second CD, there will always be 2 casts of each between each  Blade Dance. 
+// Only 1 cast of each before first blade dance of fight though since it comes earlier then 1 minute.  Skewer is always cast on the current aggro target (hopefully the tank).  
+// Seething Hate is cast on a random target in raid. This CAN target tanks.
+
+// Pull:
+// 1. 6-8 seconds in she will either cast  Seething Hate OR  Skewer, which one is cast is random.  [>> DONE <<]
+// 2. About 8 seconds after first one, she'll cast the one she didn't cast.
+
+// 1. After any time a  Blade Dance ends, 8 seconds later just like pull, she'll cast randomly either  Skewer or  Seething Hate. There is no way to know which one it will be definitively
+// 2. 8 seconds after previous, she'll cast opposite spell.
+// 3. 20 seconds after first special was used that special will be used again
+// 4. 20 seconds after second special was used that special will be used again.
+// 5. Next  Blade Dance will come after both specials have been cast twice. Which is 60 seconds after last.
+
+
 struct boss_alizabal : public CreatureScript
 {
     boss_alizabal() : CreatureScript("boss_alizabal") {}
@@ -81,6 +98,8 @@ struct boss_alizabal : public CreatureScript
 
         // Timers
         uint32 m_uiEnrageTimer;
+        uint32 m_uiSharedTimerFirst;
+        uint32 m_uiSharedTimerSecond;
         uint32 m_uiBladeDanceTimer;
 
         void Reset() override
@@ -88,6 +107,8 @@ struct boss_alizabal : public CreatureScript
             DoScriptText(YELL_ALIZABAL_WIPE, m_creature);
 
             m_uiEnrageTimer = 5 * MINUTE * IN_MILLISECONDS;
+            m_uiSharedTimerFirst = urand(6,8) * IN_MILLISECONDS;
+            // m_uiSharedTimerSecond
             m_uiBladeDanceTimer = 25 * IN_MILLISECONDS;
         }
 
@@ -103,10 +124,49 @@ struct boss_alizabal : public CreatureScript
                 return;
             }
 
+            // Shared Timer for Seething Hate and Skewer
+            if (m_uiSharedTimerFirst < uiDiff)
+            {
+                switch (urand(0, 1))
+                {
+                case 0:  // Seething Hate is cast onto random target.
+                    if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 1, SPELL_SEETHING_HATE, SELECT_FLAG_PLAYER))
+                    {
+                        if (DoCastSpellIfCan(m_creature, SPELL_SEETHING_HATE) == CAST_OK)
+                        {
+                            m_uiSharedTimerFirst = 8 * IN_MILLISECONDS;
+                            switch (urand(0,2))
+                            {
+                                case 0: DoScriptText(YELL_ALIZABAL_SEETHING_HATE_1, m_creature); break;
+                                case 1: DoScriptText(YELL_ALIZABAL_SEETHING_HATE_2, m_creature); break;
+                                case 2: DoScriptText(YELL_ALIZABAL_SEETHING_HATE_3, m_creature); break;
+                            }
+                        }
+                    }
+                    break;
+
+                case 1:   // Skewer is cast onto current target.
+                    if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_SKEWER) == CAST_OK)
+                    {
+                        m_uiSharedTimerFirst = 8 * IN_MILLISECONDS;
+                        switch (urand(0,1))
+                        {
+                            case 0: DoScriptText(YELL_ALIZABAL_SKEWER_1, m_creature); break;
+                            case 1: DoScriptText(YELL_ALIZABAL_SKEWER_2, m_creature); break;
+                        }
+                    }
+                    break;
+                }
+            }
+            else
+            {
+                m_uiSharedTimerFirst -= uiDiff;
+            }
+
             // Blade Dance Timer
             if (m_uiBladeDanceTimer < uiDiff)
             {
-                if (DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE) == CAST_OK)
+                if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE) == CAST_OK)
                 {
                     m_uiBladeDanceTimer = 1 * MINUTE * IN_MILLISECONDS;
                     switch (urand(0,1))
