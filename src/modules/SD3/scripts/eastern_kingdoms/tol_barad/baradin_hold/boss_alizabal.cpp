@@ -71,23 +71,6 @@ enum GameObjects
     GAMEOBJECT_TOLBARAD_DOOR_01       = 207849      // The door to the room is: Doodad_TolBarad_Door_01. GUID = 207849, ID = 209849
 };
 
-
-// First and foremost,  Skewer and  Seething Hate are on a shared mechanic.  [>> DONE <<]
-// They are both exactly a 20 second CD, there will always be 2 casts of each between each  Blade Dance. 
-// Only 1 cast of each before first blade dance of fight though since it comes earlier then 1 minute.  Skewer is always cast on the current aggro target (hopefully the tank).  
-// Seething Hate is cast on a random target in raid. This CAN target tanks.
-
-// Pull:
-// 1. 6-8 seconds in she will either cast  Seething Hate OR  Skewer, which one is cast is random.  [>> DONE <<]
-// 2. About 8 seconds after first one, she'll cast the one she didn't cast.
-
-// 1. After any time a  Blade Dance ends, 8 seconds later just like pull, she'll cast randomly either  Skewer or  Seething Hate. There is no way to know which one it will be definitively
-// 2. 8 seconds after previous, she'll cast opposite spell.
-// 3. 20 seconds after first special was used that special will be used again
-// 4. 20 seconds after second special was used that special will be used again.
-// 5. Next  Blade Dance will come after both specials have been cast twice. Which is 60 seconds after last.
-
-
 struct boss_alizabal : public CreatureScript
 {
     boss_alizabal() : CreatureScript("boss_alizabal") {}
@@ -98,18 +81,23 @@ struct boss_alizabal : public CreatureScript
 
         // Timers
         uint32 m_uiEnrageTimer;
-        uint32 m_uiSharedTimerFirst;
-        uint32 m_uiSharedTimerSecond;
+        uint32 m_uiSpecialTimer;
         uint32 m_uiBladeDanceTimer;
+
+        // Data Storage
+        uint8 m_uiSpecial;                                                          // 0 = Seething Hate, 1 = Skewer
+        bool m_bFirstSpecialDone;                                                   // True = Second Special is next, False = First Special is next
 
         void Reset() override
         {
             DoScriptText(YELL_ALIZABAL_WIPE, m_creature);
 
-            m_uiEnrageTimer = 5 * MINUTE * IN_MILLISECONDS;
-            m_uiSharedTimerFirst = urand(6,8) * IN_MILLISECONDS;
-            // m_uiSharedTimerSecond
-            m_uiBladeDanceTimer = 25 * IN_MILLISECONDS;
+            m_uiSpecialTimer = urand(6,8) * IN_MILLISECONDS;                     // First special starts between 6-8 seconds after pull.
+            m_uiBladeDanceTimer = 25 * IN_MILLISECONDS;                             // Blade Dance starts at 25 seconds after pull.
+            m_uiEnrageTimer = 5 * MINUTE * IN_MILLISECONDS;                         // Berserk starts at 5 minutes after pull.
+
+            m_uiSpecial = 0;
+            m_bFirstSpecialDone = false;
         }
 
         void Aggro(Unit* /*pWho*/) override
@@ -125,41 +113,55 @@ struct boss_alizabal : public CreatureScript
             }
 
             // Shared Timer for Seething Hate and Skewer
-            if (m_uiSharedTimerFirst < uiDiff)
+            if (m_uiSpecialTimer < uiDiff)
             {
-                switch (urand(0, 1))
+                if (!m_bFirstSpecialDone) // First Special has not been completed, so we need to randomize the first special.
+                {
+                    m_uiSpecial = urand(0,1);
+                }
+
+                switch (m_uiSpecial)
                 {
                 case 0:  // Seething Hate is cast onto random target.
                     if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0, SPELL_SEETHING_HATE, SELECT_FLAG_PLAYER))
                     {
                         if (DoCastSpellIfCan(pTarget, SPELL_SEETHING_HATE) == CAST_OK)
                         {
-                            m_uiSharedTimerFirst = 8 * IN_MILLISECONDS;
                             switch (urand(0,2))
                             {
                                 case 0: DoScriptText(YELL_ALIZABAL_SEETHING_HATE_1, m_creature); break;
                                 case 1: DoScriptText(YELL_ALIZABAL_SEETHING_HATE_2, m_creature); break;
                                 case 2: DoScriptText(YELL_ALIZABAL_SEETHING_HATE_3, m_creature); break;
                             }
+
+                            m_uiSpecial = 1; // This makes sure that the next time a special is done it will be the other one.
                         }
                     }
-                    }
-
                     break;
 
                 case 1:   // Skewer is cast onto current target.
                     if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_SKEWER) == CAST_OK)
-                    {
-                        m_uiSharedTimerFirst = 8 * IN_MILLISECONDS;
-                        
+                    {                        
                         DoScriptText(urand(0, 1) ? YELL_ALIZABAL_SKEWER_1 : YELL_ALIZABAL_SKEWER_2, m_creature);
+
+                        m_uiSpecial = 0; // This makes sure that the next time a special is done it will be the other one.
                     }
                     break;
+                }
+
+                if (!m_bFirstSpecialDone)                         // True = Second Special is next, False = First Special is next
+                {
+                    m_bFirstSpecialDone = true;                   // Next time we run SpecialTimer we will NOT randomize the special.
+                    m_uiSpecialTimer = 8 * IN_MILLISECONDS;     
+                }
+                else
+                {
+                    m_uiSpecialTimer = 12 * IN_MILLISECONDS;
                 }
             }
             else
             {
-                m_uiSharedTimerFirst -= uiDiff;
+                m_uiSpecialTimer -= uiDiff;
             }
 
             // Blade Dance Timer
@@ -170,6 +172,8 @@ struct boss_alizabal : public CreatureScript
                     m_uiBladeDanceTimer = 1 * MINUTE * IN_MILLISECONDS;
 
                     DoScriptText(urand(0, 1) ? YELL_ALIZABAL_BLADE_DANCE_1 : YELL_ALIZABAL_BLADE_DANCE_2, m_creature);
+
+                    m_bFirstSpecialDone = false;
                 }
             }
             else
