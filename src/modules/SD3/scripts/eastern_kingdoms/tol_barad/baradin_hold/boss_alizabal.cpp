@@ -63,6 +63,9 @@ enum Spells
     SPELL_SKEWER                      = 104936,
     SPELL_SEETHING_HATE               = 105067,
     SPELL_BLADE_DANCE                 = 104994,
+    SPELL_BLADE_DANCE_SPIN            = 105828,
+    SPELL_BLADE_DANCE_CHARGE          = 105726,
+    SPELL_BLADE_DANCE_ROOT            = 105067,
     SPELL_BERSERK                     = 47008
 };
 
@@ -83,6 +86,8 @@ struct boss_alizabal : public CreatureScript
         uint32 m_uiEnrageTimer;
         uint32 m_uiSpecialTimer;
         uint32 m_uiBladeDanceTimer;
+        uint32 m_uiBladeDanceRandomTimer;
+        uint32 m_uiBladeDanceEndTimer;
 
         // Data Storage
         uint8 m_uiSpecial;                                                          // 0 = Seething Hate, 1 = Skewer
@@ -92,8 +97,10 @@ struct boss_alizabal : public CreatureScript
         {
             DoScriptText(YELL_ALIZABAL_WIPE, m_creature);
 
-            m_uiSpecialTimer = urand(6,8) * IN_MILLISECONDS;                     // First special starts between 6-8 seconds after pull.
+            m_uiSpecialTimer = urand(6,8) * IN_MILLISECONDS;                        // First special starts between 6-8 seconds after pull.
             m_uiBladeDanceTimer = 25 * IN_MILLISECONDS;                             // Blade Dance starts at 25 seconds after pull.
+            m_uiBladeDanceRandomTimer = urand(3,4) * IN_MILLISECONDS;               // Blade Dance selects random players, this will assist in setting new randoms.
+            m_uiBladeDanceEndTimer = 0;                                             // Blade Dance lasts for 15 seconds, this timer will help maintain that.
             m_uiEnrageTimer = 5 * MINUTE * IN_MILLISECONDS;                         // Berserk starts at 5 minutes after pull.
 
             m_uiSpecial = 0;
@@ -139,6 +146,7 @@ struct boss_alizabal : public CreatureScript
                     }
                     break;
 
+
                 case 1:   // Skewer is cast onto current target.
                     if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_SKEWER) == CAST_OK)
                     {                        
@@ -165,20 +173,53 @@ struct boss_alizabal : public CreatureScript
             }
 
             // Blade Dance Timer
-            if (m_uiBladeDanceTimer < uiDiff)
+            if (m_uiBladeDanceEndTimer)                          // Is in Blade Dance
             {
-                if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE) == CAST_OK)
+                // While Blade Dance, switch to random targets often
+                if (m_uiBladeDanceRandomTimer < uiDiff)
                 {
+                    if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
+                    {
+                        m_creature->FixateTarget(pTarget);
+                        DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE_CHARGE);
+                        DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE_SPIN);
+                    }
+
+                    m_uiBladeDanceRandomTimer = urand(3000, 4000);
+                }
+                else
+                {
+                    m_uiBladeDanceRandomTimer -= uiDiff;
+                }
+
+                // End Blade Dance Phase
+                if (m_uiBladeDanceEndTimer <= uiDiff)
+                {
+                    m_creature->FixateTarget(nullptr);
+                    m_uiBladeDanceEndTimer = 0;
                     m_uiBladeDanceTimer = 1 * MINUTE * IN_MILLISECONDS;
-
-                    DoScriptText(urand(0, 1) ? YELL_ALIZABAL_BLADE_DANCE_1 : YELL_ALIZABAL_BLADE_DANCE_2, m_creature);
-
-                    m_bFirstSpecialDone = false;
+                }
+                else
+                {
+                    m_uiBladeDanceEndTimer -= uiDiff;
                 }
             }
-            else
+            else // Is not in Blade Dance
             {
-                m_uiBladeDanceTimer -= uiDiff;
+                // Enter Blade Dance Phase
+                if (m_uiBladeDanceTimer < uiDiff)
+                {
+                    if (DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE) == CAST_OK)
+                    {
+                        // DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE_ROOT);            // This is not working correctly - supposedly this should root the boss in place when they get to the player. But we need a way to remove this spell when it's time to move to the next
+                        m_uiBladeDanceEndTimer = 15 * IN_MILLISECONDS;
+                        m_uiBladeDanceRandomTimer = 500;
+                    }
+                }
+                else
+                {
+                    m_uiBladeDanceTimer -= uiDiff;
+                }
             }
 
             // Berserk Timer
@@ -194,7 +235,11 @@ struct boss_alizabal : public CreatureScript
                 m_uiEnrageTimer -= uiDiff;
             }
 
-            DoMeleeAttackIfReady();
+            // No melee damage while in Blade Dance
+            if (!m_uiBladeDanceEndTimer)
+            {
+                DoMeleeAttackIfReady();
+            }
         }
 
         void KilledUnit(Unit* pVictim) override
