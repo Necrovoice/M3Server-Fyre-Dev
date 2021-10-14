@@ -62,11 +62,20 @@ enum Spells
 {
     SPELL_SKEWER                      = 104936,
     SPELL_SEETHING_HATE               = 105067,
-    SPELL_BLADE_DANCE                 = 104994,
-    SPELL_BLADE_DANCE_SPIN            = 105828,
-    SPELL_BLADE_DANCE_CHARGE          = 105726,
-    SPELL_BLADE_DANCE_ROOT            = 105067,
-    SPELL_BERSERK                     = 47008
+    SPELL_BLADE_DANCE                 = 104995,
+    // SPELL_BLADE_DANCE_SPIN            = 105828,
+    // SPELL_BLADE_DANCE_CHARGE          = 105726,
+    // SPELL_BLADE_DANCE_ROOT            = 105784,
+    SPELL_BERSERK                     = 47008,
+
+    // SPELL_BLADE_DANCE_AURA            = 104995,     // https://www.wowhead.com/spell=104995/blade-dance
+    // SPELL_BLADE_DANCE_UNKNOWN         = 104994,     // https://www.wowhead.com/spell=104994/blade-dance , this is MUCH weaker than the one above.
+    SPELL_BLADE_DANCE_ROOT            = 105784,     // https://www.wowhead.com/spell=105784/blade-dance
+    // SPELL_BLADE_DANCE_INVINCIBLE      = 105738,     // https://www.wowhead.com/spell=105738/blade-dance
+    // SPELL_BLADE_DANCE_UNKNOWN2        = 106248,     // https://www.wowhead.com/spell=106248/blade-dance
+    SPELL_BLADE_DANCE_CHARGE          = 105726,     // https://www.wowhead.com/spell=105726/blade-dance
+    // SPELL_BLADE_DANCE_AURA2           = 105828      // https://www.wowhead.com/spell=105828/blade-dance
+
 };
 
 enum GameObjects
@@ -172,7 +181,7 @@ struct boss_alizabal : public CreatureScript
                 m_uiSpecialTimer -= uiDiff;
             }
 
-            // Blade Dance Timer
+            // Blade Dance Timer       
             if (m_uiBladeDanceEndTimer)                          // Is in Blade Dance
             {
                 // While Blade Dance, switch to random targets often
@@ -181,8 +190,6 @@ struct boss_alizabal : public CreatureScript
                     if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
                     {
                         m_creature->FixateTarget(pTarget);
-                        DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE_CHARGE);
-                        DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE_SPIN);
                     }
 
                     m_uiBladeDanceRandomTimer = urand(3000, 4000);
@@ -209,11 +216,16 @@ struct boss_alizabal : public CreatureScript
                 // Enter Blade Dance Phase
                 if (m_uiBladeDanceTimer < uiDiff)
                 {
-                    if (DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE) == CAST_OK)
+                    if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE_CHARGE) == CAST_OK)
                     {
-                        // DoCastSpellIfCan(m_creature, SPELL_BLADE_DANCE_ROOT);            // This is not working correctly - supposedly this should root the boss in place when they get to the player. But we need a way to remove this spell when it's time to move to the next
-                        m_uiBladeDanceEndTimer = 15 * IN_MILLISECONDS;
-                        m_uiBladeDanceRandomTimer = 500;
+                        if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE) == CAST_OK)
+                        {
+                            if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE_ROOT) == CAST_OK)
+                            {
+                                m_uiBladeDanceEndTimer = 15 * IN_MILLISECONDS;
+                                m_uiBladeDanceRandomTimer = 500;
+                            }
+                        }
                     }
                 }
                 else
