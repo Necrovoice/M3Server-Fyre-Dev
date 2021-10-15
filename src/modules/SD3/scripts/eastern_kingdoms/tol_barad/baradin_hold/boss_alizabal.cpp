@@ -62,12 +62,14 @@ enum Spells
 {
     SPELL_SKEWER                      = 104936,
     SPELL_SEETHING_HATE               = 105067,
+
+    // These codes came from Trinity Core
     SPELL_BLADE_DANCE                 = 104995,
     // SPELL_BLADE_DANCE_SPIN            = 105828,
     // SPELL_BLADE_DANCE_CHARGE          = 105726,
     // SPELL_BLADE_DANCE_ROOT            = 105784,
-    SPELL_BERSERK                     = 47008,
 
+    // These codes came from WowHead
     // SPELL_BLADE_DANCE_AURA            = 104995,     // https://www.wowhead.com/spell=104995/blade-dance
     // SPELL_BLADE_DANCE_UNKNOWN         = 104994,     // https://www.wowhead.com/spell=104994/blade-dance , this is MUCH weaker than the one above.
     SPELL_BLADE_DANCE_ROOT            = 105784,     // https://www.wowhead.com/spell=105784/blade-dance
@@ -76,6 +78,8 @@ enum Spells
     SPELL_BLADE_DANCE_CHARGE          = 105726,     // https://www.wowhead.com/spell=105726/blade-dance
     // SPELL_BLADE_DANCE_AURA2           = 105828      // https://www.wowhead.com/spell=105828/blade-dance
 
+
+    SPELL_BERSERK                     = 47008,
 };
 
 enum GameObjects
@@ -95,8 +99,6 @@ struct boss_alizabal : public CreatureScript
         uint32 m_uiEnrageTimer;
         uint32 m_uiSpecialTimer;
         uint32 m_uiBladeDanceTimer;
-        uint32 m_uiBladeDanceRandomTimer;
-        uint32 m_uiBladeDanceEndTimer;
 
         // Data Storage
         uint8 m_uiSpecial;                                                          // 0 = Seething Hate, 1 = Skewer
@@ -108,8 +110,6 @@ struct boss_alizabal : public CreatureScript
 
             m_uiSpecialTimer = urand(6,8) * IN_MILLISECONDS;                        // First special starts between 6-8 seconds after pull.
             m_uiBladeDanceTimer = 25 * IN_MILLISECONDS;                             // Blade Dance starts at 25 seconds after pull.
-            m_uiBladeDanceRandomTimer = urand(3,4) * IN_MILLISECONDS;               // Blade Dance selects random players, this will assist in setting new randoms.
-            m_uiBladeDanceEndTimer = 0;                                             // Blade Dance lasts for 15 seconds, this timer will help maintain that.
             m_uiEnrageTimer = 5 * MINUTE * IN_MILLISECONDS;                         // Berserk starts at 5 minutes after pull.
 
             m_uiSpecial = 0;
@@ -181,57 +181,27 @@ struct boss_alizabal : public CreatureScript
                 m_uiSpecialTimer -= uiDiff;
             }
 
-            // Blade Dance Timer       
-            if (m_uiBladeDanceEndTimer)                          // Is in Blade Dance
+            // Blade Dance Timer
+            if (m_uiBladeDanceTimer < uiDiff)
             {
-                // While Blade Dance, switch to random targets often
-                if (m_uiBladeDanceRandomTimer < uiDiff)
+                if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE) == CAST_OK)
                 {
-                    if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
-                    {
-                        m_creature->FixateTarget(pTarget);
-                    }
+                    DoScriptText(urand(0, 1) ? YELL_ALIZABAL_BLADE_DANCE_1 : YELL_ALIZABAL_BLADE_DANCE_2, m_creature);
 
-                    m_uiBladeDanceRandomTimer = urand(3000, 4000);
-                }
-                else
-                {
-                    m_uiBladeDanceRandomTimer -= uiDiff;
-                }
-
-                // End Blade Dance Phase
-                if (m_uiBladeDanceEndTimer <= uiDiff)
-                {
-                    m_creature->FixateTarget(nullptr);
-                    m_uiBladeDanceEndTimer = 0;
-                    m_uiBladeDanceTimer = 1 * MINUTE * IN_MILLISECONDS;
-                }
-                else
-                {
-                    m_uiBladeDanceEndTimer -= uiDiff;
-                }
-            }
-            else // Is not in Blade Dance
-            {
-                // Enter Blade Dance Phase
-                if (m_uiBladeDanceTimer < uiDiff)
-                {
-                    if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE_CHARGE) == CAST_OK)
+                    for (uint8 i = 0; i < 3; ++i)                                               // Choose random target three times before ending Blade Dance.
                     {
-                        if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE) == CAST_OK)
+                        if (Unit* pTarget = m_creature->SelectAttackingTarget(ATTACKING_TARGET_RANDOM, 0))
                         {
-                            if (DoCastSpellIfCan(m_creature->getVictim(), SPELL_BLADE_DANCE_ROOT) == CAST_OK)
-                            {
-                                m_uiBladeDanceEndTimer = 15 * IN_MILLISECONDS;
-                                m_uiBladeDanceRandomTimer = 500;
-                            }
+                            DoCastSpellIfCan(pTarget, SPELL_BLADE_DANCE_CHARGE);                // Charge to the new target
                         }
                     }
+
+                    m_uiBladeDanceTimer = 1 * MINUTE * IN_MILLISECONDS;                         // Reset timer to be 60 seconds after the final Blade Dance.
                 }
-                else
-                {
-                    m_uiBladeDanceTimer -= uiDiff;
-                }
+            }
+            else
+            {
+                m_uiBladeDanceTimer -= uiDiff;
             }
 
             // Berserk Timer
@@ -247,11 +217,7 @@ struct boss_alizabal : public CreatureScript
                 m_uiEnrageTimer -= uiDiff;
             }
 
-            // No melee damage while in Blade Dance
-            if (!m_uiBladeDanceEndTimer)
-            {
-                DoMeleeAttackIfReady();
-            }
+            DoMeleeAttackIfReady();
         }
 
         void KilledUnit(Unit* pVictim) override
